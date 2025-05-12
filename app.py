@@ -5,7 +5,8 @@ chat_history = []
 
 def handle_message(user_input):
     global chat_history
-    response, sim_img_path, traj_img_path = robot_chatbot(user_input)
+    response, (sim_img_path, traj_img_path) = robot_chatbot(user_input)
+    traj_img_path = traj_img_path or ""  # Avoid None
     chat_history.append((user_input, response))
     return chat_history, sim_img_path, traj_img_path
 
