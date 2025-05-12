@@ -42,7 +42,7 @@ def render(joints, grip):
     #_, _, img, _, _ = p.getCameraImage(640, 640, view_matrix, proj_matrix)
     #rgb = np.reshape(img, (640, 640, 4))[:, :, :3]
 
-    width, height = 1024, 1024
+    width, height = 1280, 1280
     _, _, img, _, _ = p.getCameraImage(width, height, view_matrix, proj_matrix)
     rgb = np.reshape(img, (height, width, 4))[:, :, :3]
 
