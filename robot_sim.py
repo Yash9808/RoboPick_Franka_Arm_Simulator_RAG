@@ -146,6 +146,7 @@ def robot_chatbot(user_input: str):
     trajectory.clear()
 
     if "pick" in user_input and "place" in user_input:
+        trajectory.clear()
         perform_pick_and_place()
         return "✅ Pick and place executed.", capture_view(), plot_trajectory()
 
