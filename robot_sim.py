@@ -90,16 +90,55 @@ def move_robot(joint_angles, grip=0.04, steps=100):
         time.sleep(0.005)
 
 # Execute pick and place
-def perform_pick_and_place():
-    approach = [0.0, -0.5, 0.3, -1.5, 0.0, 1.4, 0.6]
-    pick = [0.0, -0.4, 0.3, -1.4, 0.0, 1.2, 0.6]
-    place = [0.5, -0.4, 0.2, -1.8, 0.0, 1.4, 0.6]
+#def perform_pick_and_place():
+ #   approach = [0.0, -0.5, 0.3, -1.5, 0.0, 1.4, 0.6]
+ #   pick = [0.0, -0.4, 0.3, -1.4, 0.0, 1.2, 0.6]
+ #   place = [0.5, -0.4, 0.2, -1.8, 0.0, 1.4, 0.6]
 
+ #   move_robot(approach)
+ #   move_robot(pick, grip=0.0)  # Close gripper
+ #   move_robot([a + 0.1 for a in pick], grip=0.0)
+ #   move_robot(place, grip=0.0)
+ #   move_robot(place, grip=0.04)  # Open gripper
+    
+def perform_pick_and_place():
+    approach = [0.0, -0.4, 0.0, -2.4, 0.0, 2.0, 0.7]
+    pick = [0.0, -0.2, 0.0, -2.1, 0.0, 1.8, 0.7]
+    lift = [0.0, -0.4, 0.0, -2.4, 0.0, 2.0, 0.7]
+    place = [0.5, -0.4, 0.0, -2.4, 0.0, 2.0, 0.7]
+
+    # Approach object
     move_robot(approach)
-    move_robot(pick, grip=0.0)  # Close gripper
-    move_robot([a + 0.1 for a in pick], grip=0.0)
+    move_robot(pick)
+
+    # Close gripper
+    move_robot(pick, grip=0.0)
+    time.sleep(0.2)
+
+    # Attach object to gripper using constraint
+    cube_pos, cube_ori = p.getBasePositionAndOrientation(cube_id)
+    gripper_index = arm_joints[-1]
+    ee_link_state = p.getLinkState(robot_id, gripper_index)
+    constraint_id = p.createConstraint(
+        parentBodyUniqueId=robot_id,
+        parentLinkIndex=gripper_index,
+        childBodyUniqueId=cube_id,
+        childLinkIndex=-1,
+        jointType=p.JOINT_FIXED,
+        jointAxis=[0, 0, 0],
+        parentFramePosition=[0, 0, 0],
+        childFramePosition=[0, 0, 0]
+    )
+
+    # Lift and move to place
+    move_robot(lift, grip=0.0)
     move_robot(place, grip=0.0)
-    move_robot(place, grip=0.04)  # Open gripper
+
+    # Open gripper and remove constraint
+    move_robot(place, grip=0.04)
+    p.removeConstraint(constraint_id)
+    time.sleep(0.2)
+
 
 # Main chatbot interface
 def robot_chatbot(user_input: str):
