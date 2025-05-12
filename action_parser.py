@@ -1,7 +1,7 @@
 import re
 
 def parse_action(command: str):
-    # Match joint angles: 7 comma-separated float values
+    # Normalize and extract 7 float values (joint angles)
     angle_match = re.findall(r'-?\d+\.\d+', command)
     if len(angle_match) == 7:
         return {
@@ -9,7 +9,7 @@ def parse_action(command: str):
             "angles": [float(x) for x in angle_match]
         }
 
-    # Handle pick and place commands
+    # Handle specific keywords
     cmd = command.lower()
     if "pick" in cmd:
         return {"type": "pick"}
