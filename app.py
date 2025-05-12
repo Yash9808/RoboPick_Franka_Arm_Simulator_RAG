@@ -1,24 +1,19 @@
 import gradio as gr
-from robot_sim import RobotSimulator
-from action_parser import parse_user_input
+from robot_sim import robot_chatbot
 
-robot = RobotSimulator()
+with gr.Blocks() as demo:
+    chatbot = gr.Chatbot()
+    with gr.Row():
+        with gr.Column():
+            msg = gr.Textbox(label="Type Command (e.g., 'Pick', 'Place', or joint angles')")
+            send = gr.Button("Send")
+        output_img = gr.Image(type="filepath", label="Robot View")
 
-def chat_command_handler(msg, history):
-    result = parse_user_input(msg)
-    if result["action"] == "move":
-        robot.move_joints(result["angles"])
-        img = robot.render()
-        return [(msg, "✅ Moved to position."), (None, img)]
-    elif result["action"] == "pick":
-        robot.pick()
-        img = robot.render()
-        return [(msg, "🟡 Picked the object."), (None, img)]
-    elif result["action"] == "place":
-        robot.place()
-        img = robot.render()
-        return [(msg, "🔵 Placed the object."), (None, img)]
-    else:
-        return [(msg, f"❌ {result['msg']}")]
+    def handle_message(user_input, chat_history):
+        response, img_path = robot_chatbot(user_input, chat_history)
+        chat_history.append((user_input, response))
+        return chat_history, "", img_path
 
-gr.ChatInterface(chat_command_handler, title="🤖 Robotic Arm Controller").launch()
+    send.click(handle_message, inputs=[msg, chatbot], outputs=[chatbot, msg, output_img])
+
+demo.launch()
