@@ -38,8 +38,13 @@ def render(joints, grip):
 
     view_matrix = p.computeViewMatrix([1.5, 0, 1], [0, 0, 0.5], [0, 0, 1])
     proj_matrix = p.computeProjectionMatrixFOV(60, 1, 0.1, 3.1)
-    _, _, img, _, _ = p.getCameraImage(640, 640, view_matrix, proj_matrix)
-    rgb = np.reshape(img, (640, 640, 4))[:, :, :3]
+    #_, _, img, _, _ = p.getCameraImage(640, 640, view_matrix, proj_matrix)
+    #rgb = np.reshape(img, (640, 640, 4))[:, :, :3]
+
+    width, height = 1024, 1024
+    _, _, img, _, _ = p.getCameraImage(width, height, view_matrix, proj_matrix)
+    rgb = np.reshape(img, (height, width, 4))[:, :, :3]
+
 
     fig, ax = plt.subplots()
     ax.imshow(rgb)
