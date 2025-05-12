@@ -1,6 +1,5 @@
 
-pybullet-data==1.0.1
-
+pybullet-data
 pybullet
 numpy
 matplotlib
