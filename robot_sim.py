@@ -55,6 +55,23 @@ def capture_view():
     plt.close()
     return tmp.name
 
+# Plot 3D trajectory
+def plot_trajectory():
+    if not trajectory:
+        return None
+
+    traj = np.array(trajectory)
+    fig = plt.figure()
+    ax = fig.add_subplot(111, projection='3d')
+    ax.plot(traj[:, 0], traj[:, 1], traj[:, 2], label="End Effector Path")
+    ax.scatter(traj[-1, 0], traj[-1, 1], traj[-1, 2], color='red', label='Final Position')
+    ax.set_title("3D Trajectory")
+    ax.legend()
+    tmp = tempfile.NamedTemporaryFile(delete=False, suffix=".png")
+    plt.savefig(tmp.name)
+    plt.close()
+    return tmp.name
+
 # Move robot to given joint angles
 def move_robot(joint_angles, grip=0.04, steps=100):
     if len(joint_angles) != 7:
@@ -84,39 +101,21 @@ def perform_pick_and_place():
     move_robot(place, grip=0.0)
     move_robot(place, grip=0.04)  # Open gripper
 
-# Plot 3D trajectory
-def plot_trajectory():
-    if not trajectory:
-        return None
-
-    traj = np.array(trajectory)
-    fig = plt.figure()
-    ax = fig.add_subplot(111, projection='3d')
-    ax.plot(traj[:, 0], traj[:, 1], traj[:, 2], label="End Effector Path")
-    ax.scatter(traj[-1, 0], traj[-1, 1], traj[-1, 2], color='red', label='Final Position')
-    ax.set_title("3D Trajectory")
-    ax.legend()
-    tmp = tempfile.NamedTemporaryFile(delete=False, suffix=".png")
-    plt.savefig(tmp.name)
-    plt.close()
-    return tmp.name
-
-# Main control function
+# Main chatbot interface
 def robot_chatbot(user_input: str):
     user_input = user_input.lower().strip()
+    trajectory.clear()
+
     if "pick" in user_input and "place" in user_input:
-        trajectory.clear()
         perform_pick_and_place()
-        return "✅ Pick and place executed.", capture_view()
+        return "✅ Pick and place executed.", capture_view(), plot_trajectory()
 
     try:
         values = [float(v.strip()) for v in user_input.split(",")]
         if len(values) == 7:
-            trajectory.clear()
             move_robot(values)
-            return "✅ Moved to specified joint angles.", capture_view()
+            return "✅ Moved to specified joint angles.", capture_view(), plot_trajectory()
     except Exception:
         pass
 
-    return "🤖 Command not recognized. Try 'pick', 'place', or provide 7 joint angles.", capture_view()
-
+    return "🤖 Command not recognized. Try 'pick', 'place', or provide 7 joint angles.", capture_view(), plot_trajectory()
