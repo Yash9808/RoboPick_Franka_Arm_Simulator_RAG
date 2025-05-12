@@ -78,3 +78,20 @@ def get_image():
     proj_matrix = p.computeProjectionMatrixFOV(60, 1, 0.1, 3.1)
     _, _, img, _, _ = p.getCameraImage(640, 640, view_matrix, proj_matrix)
     return img[:, :, :3] if isinstance(img, np.ndarray) else None
+
+
+
+def robot_chatbot(command):
+    if isinstance(command, str) and "pick" in command.lower():
+        return pick()
+    elif isinstance(command, str) and "place" in command.lower():
+        return place()
+    try:
+        joint_values = [float(x.strip()) for x in command.split(",")]
+        if len(joint_values) == 7:
+            return move_to_joint_angles(joint_values)
+        else:
+            return None, "❌ Please provide 7 joint values."
+    except Exception as e:
+        return None, f"Error parsing command: {e}"
+
