@@ -1,15 +1,19 @@
-def parse_user_input(msg: str):
-    msg = msg.lower()
-    if "pick" in msg:
-        return {"action": "pick"}
-    elif "place" in msg:
-        return {"action": "place"}
-    elif "move to" in msg:
-        # Example: move to 0.0, -0.5, 0.3, -1.2, 0.0, 1.5, 0.8
-        try:
-            angles = [float(x) for x in msg.split("move to")[1].split(",")]
-            if len(angles) == 7:
-                return {"action": "move", "angles": angles}
-        except:
-            return {"action": "error", "msg": "Failed to parse joint angles."}
-    return {"action": "error", "msg": "Unknown command."}
+import re
+
+def parse_action(command: str):
+    # Match joint angles: 7 comma-separated float values
+    angle_match = re.findall(r'-?\d+\.\d+', command)
+    if len(angle_match) == 7:
+        return {
+            "type": "move",
+            "angles": [float(x) for x in angle_match]
+        }
+
+    # Handle pick and place commands
+    cmd = command.lower()
+    if "pick" in cmd:
+        return {"type": "pick"}
+    if "place" in cmd:
+        return {"type": "place"}
+
+    return {"type": "unknown", "message": "Command not recognized. Try 'pick', 'place', or provide 7 joint angles."}
