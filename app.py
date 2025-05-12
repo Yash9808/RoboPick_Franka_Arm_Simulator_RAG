@@ -1,19 +1,23 @@
+# app.py
 import gradio as gr
 from robot_sim import robot_chatbot
 
+chat_history = []
+
+def handle_message(user_input, history):
+    img_path, response = robot_chatbot(user_input)
+    if response is None:
+        response = "🤖 Something went wrong."
+    history.append((user_input, response))
+    return history, img_path
+
 with gr.Blocks() as demo:
+    gr.Markdown("## 🤖 Robotic RAG Chatbot Interface")
     chatbot = gr.Chatbot()
-    with gr.Row():
-        with gr.Column():
-            msg = gr.Textbox(label="Type Command (e.g., 'Pick', 'Place', or joint angles')")
-            send = gr.Button("Send")
-        output_img = gr.Image(type="filepath", label="Robot View")
+    msg = gr.Textbox(label="Enter Command", placeholder="e.g. pick or 0.0, -0.5, 0.3, -1.2, 0.0, 1.5, 0.8")
+    output_img = gr.Image(type="filepath", label="Simulation View")
+    send = gr.Button("Send")
 
-    def handle_message(user_input, chat_history):
-        response, img_path = robot_chatbot(user_input, chat_history)
-        chat_history.append((user_input, response))
-        return chat_history, "", img_path
-
-    send.click(handle_message, inputs=[msg, chatbot], outputs=[chatbot, msg, output_img])
+    send.click(fn=handle_message, inputs=[msg, chatbot], outputs=[chatbot, output_img])
 
 demo.launch()
