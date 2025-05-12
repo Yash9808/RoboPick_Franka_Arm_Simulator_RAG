@@ -1,96 +1,79 @@
 # robot_sim.py
 import pybullet as p
 import pybullet_data
+import time
 import numpy as np
 import matplotlib.pyplot as plt
-import tempfile
-import time
+from mpl_toolkits.mplot3d import Axes3D
+import os
 
-p.connect(p.DIRECT)
-#p.connect(p.GUI)
+p.connect(p.GUI)
 p.setAdditionalSearchPath(pybullet_data.getDataPath())
 p.setGravity(0, 0, -9.8)
 p.loadURDF("plane.urdf")
-robot = p.loadURDF("franka_panda/panda.urdf", basePosition=[0, 0, 0], useFixedBase=True)
-cube_id = p.loadURDF("cube_small.urdf", basePosition=[0.6, 0, 0.02])
-p.changeVisualShape(cube_id, -1, rgbaColor=[0, 0, 0, 1])
+robot = p.loadURDF("franka_panda/panda.urdf", [0, 0, 0], useFixedBase=True)
+cube_id = p.loadURDF("cube_small.urdf", [0.6, 0, 0.02])
 
-def get_joints():
-    arm, fingers = [], []
-    for i in range(p.getNumJoints(robot)):
-        info = p.getJointInfo(robot, i)
-        name = info[1].decode()
-        if "finger" in name:
-            fingers.append(i)
-        elif info[2] == p.JOINT_REVOLUTE:
-            arm.append(i)
-    return arm, fingers
+arm_joints = [i for i in range(p.getNumJoints(robot)) if p.getJointInfo(robot, i)[2] == p.JOINT_REVOLUTE]
+finger_joints = [9, 10]  # Panda gripper fingers
+end_effector_index = 11  # Tip link index for trajectory
 
-arm_joints, finger_joints = get_joints()
-current_joint_angles = [0] * 7
-grip = 0.02
+trajectory = []
 
-def render(joints, grip):
-    for idx, val in zip(arm_joints, joints):
-        p.setJointMotorControl2(robot, idx, p.POSITION_CONTROL, targetPosition=val)
-    for fj in finger_joints:
-        p.setJointMotorControl2(robot, fj, p.POSITION_CONTROL, targetPosition=grip)
-    for _ in range(20): p.stepSimulation()
+approach_pose = [0.0, 0.5, -0.6, -1.5, 0.0, 2.0, 1.5]
+place_pose = [-0.5, 0.4, 0.3, -1.2, 0.0, 1.8, 1.4]
 
-    view_matrix = p.computeViewMatrix([1.5, 0, 1], [0, 0, 0.5], [0, 0, 1])
-    proj_matrix = p.computeProjectionMatrixFOV(60, 1, 0.1, 3.1)
-    #_, _, img, _, _ = p.getCameraImage(640, 640, view_matrix, proj_matrix)
-    #rgb = np.reshape(img, (640, 640, 4))[:, :, :3]
+def record_trajectory():
+    pos = p.getLinkState(robot, end_effector_index)[0]
+    trajectory.append(pos)
 
-    width, height = 1280, 1280
-    _, _, img, _, _ = p.getCameraImage(width, height, view_matrix, proj_matrix)
-    rgb = np.reshape(img, (height, width, 4))[:, :, :3]
-
-
-    fig, ax = plt.subplots()
-    ax.imshow(rgb)
-    ax.axis("off")
-    tmp = tempfile.NamedTemporaryFile(suffix=".png", delete=False)
-    plt.savefig(tmp.name, bbox_inches='tight')
+def plot_trajectory():
+    if not trajectory:
+        return
+    xs, ys, zs = zip(*trajectory)
+    fig = plt.figure()
+    ax = fig.add_subplot(111, projection='3d')
+    ax.plot(xs, ys, zs, marker='o')
+    ax.set_title("End-Effector Trajectory")
+    os.makedirs("assets", exist_ok=True)
+    plt.savefig("assets/trajectory.png")
     plt.close()
 
-    return tmp.name
-
-def robot_chatbot(input_text, history):
-    global current_joint_angles, grip
-
-    if "pick" in input_text.lower():
-        for _ in range(50):
-            for fj in finger_joints:
-                p.setJointMotorControl2(robot, fj, p.POSITION_CONTROL, targetPosition=0.0)
+def move_to_angles(joint_values):
+    current = [p.getJointState(robot, j)[0] for j in arm_joints]
+    steps = 100
+    for i in range(steps):
+        blend = [(1 - i/steps)*c + (i/steps)*t for c, t in zip(current, joint_values)]
+        for j, v in zip(arm_joints, blend):
+            p.setJointMotorControl2(robot, j, p.POSITION_CONTROL, targetPosition=v)
+        for _ in range(2):
             p.stepSimulation()
+            record_trajectory()
             time.sleep(0.01)
-        grip = 0.0
-        response = "🟢 Object picked."
 
-    elif "place" in input_text.lower():
-        for _ in range(50):
-            for fj in finger_joints:
-                p.setJointMotorControl2(robot, fj, p.POSITION_CONTROL, targetPosition=0.04)
-            p.stepSimulation()
-            time.sleep(0.01)
-        grip = 0.04
-        response = "🟢 Object placed."
+def pick():
+    move_to_angles(approach_pose)
+    move_to_angles([j - 0.05 for j in approach_pose])
+    for _ in range(50):
+        for fj in finger_joints:
+            p.setJointMotorControl2(robot, fj, p.POSITION_CONTROL, targetPosition=0.0)
+        p.stepSimulation()
+        record_trajectory()
+        time.sleep(0.01)
+    move_to_angles([j + 0.1 for j in approach_pose])
 
-    elif "joint" in input_text.lower():
-        try:
-            parts = input_text.lower().replace("joint", "").replace("angles", "").strip()
-            new_angles = [float(x.strip()) for x in parts.split(",")]
-            if len(new_angles) != 7:
-                response = "⚠️ Please provide exactly 7 joint angles."
-            else:
-                current_joint_angles = new_angles
-                response = f"✅ Moved to new joint angles."
-        except:
-            response = "❌ Failed to parse joint angles."
+def place():
+    move_to_angles(place_pose)
+    for _ in range(50):
+        for fj in finger_joints:
+            p.setJointMotorControl2(robot, fj, p.POSITION_CONTROL, targetPosition=0.04)
+        p.stepSimulation()
+        record_trajectory()
+        time.sleep(0.01)
 
-    else:
-        response = "🤖 Command not recognized. Try 'pick', 'place', or provide 7 joint angles."
 
-    img_path = render(current_joint_angles, grip)
-    return response, img_path
+def get_image():
+    view_matrix = p.computeViewMatrix([1.5, 0, 1], [0, 0, 0.5], [0, 0, 1])
+    proj_matrix = p.computeProjectionMatrixFOV(60, 1, 0.1, 3.1)
+    _, _, img, _, _ = p.getCameraImage(640, 640, view_matrix, proj_matrix)
+    return img[:, :, :3] if isinstance(img, np.ndarray) else None
