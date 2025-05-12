@@ -7,7 +7,8 @@ import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 import os
 
-p.connect(p.GUI)
+#p.connect(p.GUI)
+p.connect(p.DIRECT)
 p.setAdditionalSearchPath(pybullet_data.getDataPath())
 p.setGravity(0, 0, -9.8)
 p.loadURDF("plane.urdf")
