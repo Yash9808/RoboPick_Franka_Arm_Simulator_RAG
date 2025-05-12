@@ -81,7 +81,7 @@ def get_image():
 
 
 
-def robot_chatbot(command):
+def robot_chatbot(command, chat_history=None):
     if isinstance(command, str) and "pick" in command.lower():
         return pick()
     elif isinstance(command, str) and "place" in command.lower():
@@ -94,4 +94,5 @@ def robot_chatbot(command):
             return None, "❌ Please provide 7 joint values."
     except Exception as e:
         return None, f"Error parsing command: {e}"
+
 
