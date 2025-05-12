@@ -6,8 +6,8 @@ import matplotlib.pyplot as plt
 import tempfile
 import time
 
-#p.connect(p.DIRECT)
-p.connect(p.GUI)
+p.connect(p.DIRECT)
+#p.connect(p.GUI)
 p.setAdditionalSearchPath(pybullet_data.getDataPath())
 p.setGravity(0, 0, -9.8)
 p.loadURDF("plane.urdf")
