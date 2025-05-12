@@ -34,7 +34,7 @@ trajectory = []  # Stores joint trajectory for 3D plot
 
 # Render camera view
 def capture_view():
-    width, height = 640, 640
+    width, height = 1280,1280
     view_matrix = p.computeViewMatrix(cameraEyePosition=[1.2, 0, 1],
                                       cameraTargetPosition=[0, 0, 0.4],
                                       cameraUpVector=[0, 0, 1])
