@@ -10,3 +10,4 @@ pinned: false
 ---
 
 Check out the configuration reference at https://huggingface.co/docs/hub/spaces-config-reference
+<img width="861" alt="Capture1" src="https://github.com/user-attachments/assets/b639d59c-bd5a-4b62-8c63-9d16a1369e48" />
